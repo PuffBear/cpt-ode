@@ -1,0 +1,35 @@
+{
+  "python": "3.8.5",
+  "numpy": "1.19.2",
+  "mpmath": "1.1.0",
+  "gamma_range": [
+    0.05,
+    0.95,
+    181
+  ],
+  "lambda_range": [
+    0.01,
+    2.49,
+    249
+  ],
+  "decimal_digits": 80,
+  "bisection_steps": 140,
+  "extremum_scan_points": 1001,
+  "workers": 8,
+  "elapsed_seconds": 382.9678809642792,
+  "positive_lambda_fold_brackets": [
+    [
+      0.20499999999999996,
+      0.20999999999999996
+    ],
+    [
+      0.5499999999999999,
+      0.5549999999999999
+    ]
+  ],
+  "all_extremum_scans_have_one_sign_change": true,
+  "phase_cells": 45069,
+  "stable_cells": 42926,
+  "pbs_job_id": "132318.master",
+  "pbs_queue": "cpu"
+}

@@ -3,7 +3,9 @@ __pycache__/
 *.py[cod]
 .DS_Store
 .pytest_cache/
-figures/
+figures/*
+!figures/prelec_phase_map.pdf
+!figures/prelec_phase_map.png
 .matplotlib/
 logs/*.out
 logs/*.err

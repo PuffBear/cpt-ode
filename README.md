@@ -23,7 +23,7 @@ See [experiments/README.md](experiments/README.md) for parameter settings and in
 
 ## Scope
 
-The nonlinear result uses the analytically tractable distortion \(w(u)=u^{1/4}\). It does not establish a corresponding transition for Prelec or other empirically calibrated inverse-S weighting functions. A systematic Prelec sweep is the intended next experiment.
+The exact nonlinear theorem uses the analytically tractable distortion \(w(u)=u^{1/4}\). The completed high-precision experiment extends the numerical evidence to inverse-S Prelec weights; it does not replace an analytic Prelec classification or establish behavior under sampled-gradient learning.
 
 ## Prelec sweep
 
@@ -38,3 +38,5 @@ The full PBS configuration is in `jobs/prelec_full.pbs`. It requests eight CPU c
   --output-dir /tmp/prelec-smoke/results \
   --figure-dir /tmp/prelec-smoke/figures
 ```
+
+The recorded SHARC run completed 45,069 phase cells at 80-digit precision. It found stable/saddle pairs in 42,926 cells and at some positive loss aversion for every sampled \(\gamma\in[0.05,0.95]\). See `experiments/results/prelec_full/summary.json` and `figures/prelec_phase_map.*`.
