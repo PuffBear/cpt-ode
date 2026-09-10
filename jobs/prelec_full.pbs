@@ -1,0 +1,32 @@
+#!/bin/bash
+#PBS -N cpt_prelec
+#PBS -o logs/prelec.out
+#PBS -e logs/prelec.err
+#PBS -l ncpus=8
+#PBS -l walltime=01:00:00
+#PBS -q cpu
+
+set -euo pipefail
+module purge
+module load compiler/anaconda3
+cd "$PBS_O_WORKDIR"
+
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
+export MPLCONFIGDIR="$PBS_O_WORKDIR/.matplotlib"
+
+mkdir -p logs experiments/results/prelec_full figures "$MPLCONFIGDIR"
+
+python experiments/prelec_sweep.py \
+  --workers 8 \
+  --gamma-min 0.05 \
+  --gamma-max 0.95 \
+  --gamma-count 181 \
+  --lambda-min 0.01 \
+  --lambda-max 2.49 \
+  --lambda-count 249 \
+  --dps 80 \
+  --bisect-steps 140 \
+  --scan-points 1001

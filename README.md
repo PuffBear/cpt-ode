@@ -24,3 +24,17 @@ See [experiments/README.md](experiments/README.md) for parameter settings and in
 ## Scope
 
 The nonlinear result uses the analytically tractable distortion \(w(u)=u^{1/4}\). It does not establish a corresponding transition for Prelec or other empirically calibrated inverse-S weighting functions. A systematic Prelec sweep is the intended next experiment.
+
+## Prelec sweep
+
+`experiments/prelec_sweep.py` maps the existence and location of stable mixed policies for inverse-S Prelec weights over \((\lambda,\gamma)\). It uses arbitrary-precision log-probability coordinates because the stable branch and fold can approach probabilities far below IEEE double precision as \(\gamma\) approaches one.
+
+The full PBS configuration is in `jobs/prelec_full.pbs`. It requests eight CPU cores on one node and limits numerical libraries to one thread per worker. A small local smoke test is:
+
+```sh
+.venv/bin/python experiments/prelec_sweep.py \
+  --workers 2 --gamma-count 5 --lambda-count 7 \
+  --dps 50 --bisect-steps 80 --scan-points 101 \
+  --output-dir /tmp/prelec-smoke/results \
+  --figure-dir /tmp/prelec-smoke/figures
+```
