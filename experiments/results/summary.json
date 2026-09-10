@@ -1,0 +1,304 @@
+{
+  "python": "3.14.0",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "matplotlib": "3.11.1",
+  "solver": "DOP853",
+  "rtol": 1e-10,
+  "atol": 1e-12,
+  "basin_horizon": 20000.0,
+  "basin_threshold": 0.01,
+  "grid": "0.05:0.05:0.95 squared",
+  "basin_summary": [
+    {
+      "lam": 1.0,
+      "evaluated": 361,
+      "separatrix_excluded": 0,
+      "safe": 100,
+      "risky": 261,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    },
+    {
+      "lam": 2.0,
+      "evaluated": 342,
+      "separatrix_excluded": 19,
+      "safe": 171,
+      "risky": 171,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    },
+    {
+      "lam": 2.5,
+      "evaluated": 361,
+      "separatrix_excluded": 0,
+      "safe": 261,
+      "risky": 100,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    },
+    {
+      "lam": 2.9,
+      "evaluated": 361,
+      "separatrix_excluded": 0,
+      "safe": 356,
+      "risky": 5,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    },
+    {
+      "lam": 3.0,
+      "evaluated": 361,
+      "separatrix_excluded": 0,
+      "safe": 361,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    },
+    {
+      "lam": 3.1,
+      "evaluated": 361,
+      "separatrix_excluded": 0,
+      "safe": 361,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    },
+    {
+      "lam": 4.0,
+      "evaluated": 361,
+      "separatrix_excluded": 0,
+      "safe": 361,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0,
+      "horizon_label_changes": 0
+    }
+  ],
+  "curvature_summary": [
+    {
+      "alpha": 0.6,
+      "lam": 1.5465456359454102,
+      "threshold": 1.9331820449317627,
+      "ratio": 0.8,
+      "evaluated": 81,
+      "safe": 73,
+      "risky": 8,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.6,
+      "lam": 1.8365229426851746,
+      "threshold": 1.9331820449317627,
+      "ratio": 0.95,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.6,
+      "lam": 1.9331820449317627,
+      "threshold": 1.9331820449317627,
+      "ratio": 1.0,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.6,
+      "lam": 2.029841147178351,
+      "threshold": 1.9331820449317627,
+      "ratio": 1.05,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.6,
+      "lam": 2.3198184539181153,
+      "threshold": 1.9331820449317627,
+      "ratio": 1.2,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.8,
+      "lam": 1.926579748224554,
+      "threshold": 2.4082246852806923,
+      "ratio": 0.8,
+      "evaluated": 81,
+      "safe": 65,
+      "risky": 16,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.8,
+      "lam": 2.2878134510166577,
+      "threshold": 2.4082246852806923,
+      "ratio": 0.95,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.8,
+      "lam": 2.4082246852806923,
+      "threshold": 2.4082246852806923,
+      "ratio": 1.0,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.8,
+      "lam": 2.528635919544727,
+      "threshold": 2.4082246852806923,
+      "ratio": 1.05,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 0.8,
+      "lam": 2.8898696223368305,
+      "threshold": 2.4082246852806923,
+      "ratio": 1.2,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 1.0,
+      "lam": 2.4000000000000004,
+      "threshold": 3.0,
+      "ratio": 0.8,
+      "evaluated": 81,
+      "safe": 56,
+      "risky": 25,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 1.0,
+      "lam": 2.8499999999999996,
+      "threshold": 3.0,
+      "ratio": 0.95,
+      "evaluated": 81,
+      "safe": 80,
+      "risky": 1,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 1.0,
+      "lam": 3.0,
+      "threshold": 3.0,
+      "ratio": 1.0,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 1.0,
+      "lam": 3.1500000000000004,
+      "threshold": 3.0,
+      "ratio": 1.05,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    },
+    {
+      "alpha": 1.0,
+      "lam": 3.5999999999999996,
+      "threshold": 3.0,
+      "ratio": 1.2,
+      "evaluated": 81,
+      "safe": 81,
+      "risky": 0,
+      "unresolved": 0,
+      "disagreements": 0
+    }
+  ],
+  "analytic_checks": [
+    {
+      "lam": 1.0,
+      "jacobian_max_abs_error": 1.4966361483459423e-12,
+      "invariant_max_scaled_drift": 4.196601916969102e-09
+    },
+    {
+      "lam": 2.0,
+      "jacobian_max_abs_error": 3.3444497171686294e-12,
+      "invariant_max_scaled_drift": 7.382339970589648e-10
+    },
+    {
+      "lam": 2.5,
+      "jacobian_max_abs_error": 4.852646062758481e-13,
+      "invariant_max_scaled_drift": 9.305679286857445e-10
+    },
+    {
+      "lam": 2.9,
+      "jacobian_max_abs_error": 1.3262915071754477e-13,
+      "invariant_max_scaled_drift": 8.604570397844369e-10
+    }
+  ],
+  "euler_orders": [
+    {
+      "lam": 1.0,
+      "slope": 0.9988590774754496
+    },
+    {
+      "lam": 2.0,
+      "slope": 0.9998125656145603
+    },
+    {
+      "lam": 2.5,
+      "slope": 0.9997197762283984
+    },
+    {
+      "lam": 2.9,
+      "slope": 0.9997495186713142
+    },
+    {
+      "lam": 3.0,
+      "slope": 1.00005600855723
+    },
+    {
+      "lam": 3.1,
+      "slope": 1.0001977509069209
+    },
+    {
+      "lam": 4.0,
+      "slope": 0.9997754743876612
+    }
+  ],
+  "reference_tolerance_max_difference": 1.4315615359805633e-10
+}

@@ -1,0 +1,108 @@
+{
+  "lambda_saddle_node": 2.211324865405187,
+  "max_stationarity_residual": 2.0681106291166896e-17,
+  "max_eigenvalue_check_error": 1.7827284787275133e-12,
+  "fold_G_lambda_analytic": -0.035962353459801734,
+  "fold_G_lambda_numerical": -0.03596235346003403,
+  "fold_G_xx_analytic": 0.15572155838031748,
+  "fold_G_xx_numerical": 0.1557215123713013,
+  "stable_trajectory_checks": [
+    {
+      "lambda": 2.25,
+      "logit_perturbation": [
+        0.01,
+        0.02
+      ],
+      "final_probability_error": 2.619099381817591e-12
+    },
+    {
+      "lambda": 2.25,
+      "logit_perturbation": [
+        -0.01,
+        -0.02
+      ],
+      "final_probability_error": 4.4268755328147336e-12
+    },
+    {
+      "lambda": 2.25,
+      "logit_perturbation": [
+        0.015,
+        -0.01
+      ],
+      "final_probability_error": 1.3514384056279027e-11
+    },
+    {
+      "lambda": 2.25,
+      "logit_perturbation": [
+        -0.015,
+        0.01
+      ],
+      "final_probability_error": 1.5179774104367993e-11
+    },
+    {
+      "lambda": 2.3,
+      "logit_perturbation": [
+        0.01,
+        0.02
+      ],
+      "final_probability_error": 1.5538459408048766e-11
+    },
+    {
+      "lambda": 2.3,
+      "logit_perturbation": [
+        -0.01,
+        -0.02
+      ],
+      "final_probability_error": 2.3415991368125333e-13
+    },
+    {
+      "lambda": 2.3,
+      "logit_perturbation": [
+        0.015,
+        -0.01
+      ],
+      "final_probability_error": 3.999162112577892e-13
+    },
+    {
+      "lambda": 2.3,
+      "logit_perturbation": [
+        -0.015,
+        0.01
+      ],
+      "final_probability_error": 7.26246840443423e-12
+    },
+    {
+      "lambda": 2.4,
+      "logit_perturbation": [
+        0.01,
+        0.02
+      ],
+      "final_probability_error": 9.300234193876378e-13
+    },
+    {
+      "lambda": 2.4,
+      "logit_perturbation": [
+        -0.01,
+        -0.02
+      ],
+      "final_probability_error": 5.997303348381777e-12
+    },
+    {
+      "lambda": 2.4,
+      "logit_perturbation": [
+        0.015,
+        -0.01
+      ],
+      "final_probability_error": 1.0620324064625208e-13
+    },
+    {
+      "lambda": 2.4,
+      "logit_perturbation": [
+        -0.015,
+        0.01
+      ],
+      "final_probability_error": 2.3994695119711196e-14
+    }
+  ],
+  "max_final_probability_error": 1.5538459408048766e-11
+}
