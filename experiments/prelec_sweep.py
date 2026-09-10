@@ -215,7 +215,8 @@ def make_figure(critical_rows, phase_rows, path):
 
     plt.rcParams.update({"font.size": 9, "axes.spines.top": False,
                          "axes.spines.right": False, "pdf.fonttype": 42})
-    fig, axes = plt.subplots(1, 3, figsize=(8.6, 2.7), layout="constrained")
+    fig, axes = plt.subplots(1, 3, figsize=(8.6, 2.7),
+                             constrained_layout=True)
     axes[0].plot(gamma, lambda_fold, color="#0072B2")
     axes[0].fill_between(gamma, lambda_fold, 2.5, color="#0072B2", alpha=0.18)
     axes[0].set(xlabel=r"Prelec exponent $\gamma$",
