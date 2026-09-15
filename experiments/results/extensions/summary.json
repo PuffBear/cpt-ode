@@ -1,0 +1,76 @@
+{
+  "stable_x": 0.11603633825510676,
+  "baselines": [
+    {
+      "mode": "eu",
+      "p1_final": 0.0005088439321256339,
+      "p2_final": 0.0005090436187883906,
+      "finite_root_found": true,
+      "root_p1": 0.3333333333333333,
+      "max_real_eigenvalue": 0.14814814814665153
+    },
+    {
+      "mode": "value",
+      "p1_final": 0.0005053289443312669,
+      "p2_final": 0.0005057642199445793,
+      "finite_root_found": true,
+      "root_p1": 0.588235294117647,
+      "max_real_eigenvalue": 0.09973539588840077
+    },
+    {
+      "mode": "conditional",
+      "p1_final": 0.000506467729905362,
+      "p2_final": 0.0005068170867635822,
+      "finite_root_found": true,
+      "root_p1": 0.45929393137847574,
+      "max_real_eigenvalue": 0.13428057583952097
+    },
+    {
+      "mode": "entropy",
+      "p1_final": 0.5979478645855201,
+      "p2_final": 0.5979478645790693,
+      "finite_root_found": true,
+      "root_p1": 0.5979478645822948,
+      "max_real_eigenvalue": -0.3074269858169276
+    },
+    {
+      "mode": "terminal",
+      "p1_final": 0.11603633830289388,
+      "p2_final": 0.11603633830298547,
+      "finite_root_found": true,
+      "root_p1": 0.11603633825545757,
+      "max_real_eigenvalue": -0.010557228334829976
+    }
+  ],
+  "perturbation_cells": 81,
+  "stable_perturbation_cells": 25,
+  "homogeneous_stable": 9,
+  "homogeneous_no_stable_by_exact_criterion": 18,
+  "heterogeneous_stable": 16,
+  "heterogeneous_unresolved": 38,
+  "sampled": {
+    "64": {
+      "median_error": 0.004455948714012184,
+      "max_error": 0.013126233569774923,
+      "within_002": 40
+    },
+    "256": {
+      "median_error": 0.0020608514908126985,
+      "max_error": 0.006570671299455558,
+      "within_002": 40
+    },
+    "1024": {
+      "median_error": 0.0012072177475921375,
+      "max_error": 0.005154901870916009,
+      "within_002": 40
+    }
+  },
+  "estimator": "Unbiased score estimator with exact cumulative probabilities and exact scalar baseline; not model-free.",
+  "versions": {
+    "python": "3.14.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "matplotlib": "3.11.2"
+  },
+  "rejected_local_root_searches": 56
+}

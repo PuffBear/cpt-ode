@@ -6,6 +6,8 @@ __pycache__/
 figures/*
 !figures/prelec_phase_map.pdf
 !figures/prelec_phase_map.png
+!figures/saddle_central.pdf
+!figures/saddle_central.png
 .matplotlib/
 logs/*.out
 logs/*.err

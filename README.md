@@ -40,3 +40,7 @@ The full PBS configuration is in `jobs/prelec_full.pbs`. It requests eight CPU c
 ```
 
 The recorded SHARC run completed 45,069 phase cells at 80-digit precision. It found stable/saddle pairs in 42,926 cells and at some positive loss aversion for every sampled \(\gamma\in[0.05,0.95]\). See `experiments/results/prelec_full/summary.json` and `figures/prelec_phase_map.*`.
+
+## Matched baselines and local generalization
+
+The revised central figure compares terminal CPT with expected return, value-only transformation, conditional CPT, and entropy-regularized expected return. Run `python experiments/validate_extensions.py` with `experiments/requirements-extensions.txt`. See `experiments/EXTENSIONS.md` for the 81-setting perturbation grid and 120 oracle-weight Monte Carlo gradient runs, including the estimator's limits. Complete outputs are in `experiments/results/extensions/`. The saddle-node figure is in `figures/saddle_central.*`.
