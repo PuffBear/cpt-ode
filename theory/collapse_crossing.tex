@@ -1,0 +1,433 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.05in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{booktabs,graphicx,enumitem,hyperref,array}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black}
+\setlist{itemsep=2pt,topsep=3pt}
+\setlength{\emergencystretch}{4em}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{hyp}{Hypothesis}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\wcrit}{w_{\mathrm c}}
+\newcommand{\wfifty}{w_{50}}
+\newcommand{\xc}{x_{\mathrm c}}
+\newcommand{\xmed}{\tilde x_0}
+\newcommand{\Tstar}{T_\star}
+\newcommand{\logit}{\operatorname{logit}}
+\newcommand{\Sym}{\operatorname{Sym}}
+\newcommand{\tr}{\operatorname{tr}}
+
+\title{A Dynamical-Systems Theory of the\\ Finite-Budget Coordination-Collapse Crossing\\[4pt]
+\large Basins, stability, Lyapunov certificates and perturbations}
+\author{}
+\date{15 October 2026}
+
+\begin{document}
+\maketitle
+
+\section*{0. The short answer}
+
+\textbf{Yes, ODE methods apply, but to the \emph{structure} of $\wfifty(T)$ and not to its numerical value.}
+The paper~\cite{P} measures a finite-budget crossing; the natural dynamical object behind it is the first-passage time of a gradient-like flow out of the lazy (collapsed) region. That reduces every statement about $\wfifty(T)$ to a statement about orbits, equilibria, their stability, and a clock. What I can prove, under explicit hypotheses (Section~1), is:
+
+\begin{enumerate}
+\item \textbf{Clock lemma (exact).} Any reward transform that acts on the update only through a bounded positive scalar (a ``clock'') leaves orbits, equilibria, stability types and critical weights unchanged, and satisfies $\wfifty^{\text{transformed}}(T)\in[\wfifty(\kappa_{\max}T),\,\wfifty(\kappa_{\min}T)]$ (Lemmas~2--3, Corollary~1). Scale-type effects can therefore translate the crossing in $\ln T$ but cannot move the asymptotic boundary.
+\item \textbf{Lyapunov/perturbation theory of the lazy state (exact).} A log-norm (Lyapunov) certificate gives a computable lower bound $w_{\mathrm{cert}}\le \wcrit$; a trace bound gives an upper bound; first-order perturbation theory gives the shift of $\wcrit$ under any change of the field (Propositions~1--2).
+\item \textbf{Main theorem (exact in a normal form).} The finite-budget crossing is the inverse of the median passage-time curve. In the transcritical normal form it obeys an explicit implicit law that behaves like $\wcrit+c/T$ at intermediate budgets and saturates exponentially at a $\kappa$-independent limit; collapse probability is exactly logistic in $w$ up to explicit corrections (Theorem~1). With two horizons and the logistic slope, the \emph{threshold} and the \emph{clock} are separately identified (Corollary~2).
+\item \textbf{Other classes.} Bistable basin boundaries, saddle-node bottlenecks, and noise-driven (Kramers/Maxwell) regimes give different, falsifiable fingerprints (Propositions~3--5, Table~1).
+\end{enumerate}
+
+\textbf{What the theory says about the paper's own numbers} (Section~6): the four cross-sectional crossings are fitted far better by $\wcrit+c/T$ than by the paper's log law (pooled $\chi^2=3.3$ vs.\ $25.6$ on 6 d.o.f.), and the log law extrapolates badly into the independent 1.8M/3.6M cohort; the slopes in Table~4 of~\cite{P} are not what a pure clock predicts; and the \emph{design} of the direct scale-versus-asymmetry control cannot identify the answer from midpoints at one horizon, but \emph{would} with two horizons plus slopes. The model also predicts that the asymptote sits above the linear-instability threshold by an offset proportional to the collapse-label threshold (Corollary~\ref{c4}), a test that may need no new training runs; and it fixes the window in which the $1/T$ law and the two-horizon estimator are valid (Theorem~\ref{t1}(b)). The existing data do not locate the end of that window (roughly 190k to over 2M), so part of the paper's own horizon range may lie outside it.
+
+\textbf{What I cannot prove.} That PPO (Adam, joint gradient clipping, GAE, minibatching, function approximation) reduces to the ODE of Hypothesis~\ref{h0}, that the reduced scalar flow exists on the inventory network, that the initial law and the collapse label project cleanly onto its critical mode (Hypothesis~\ref{h3}(c)), or any numerical value of $\wfifty$. These are the assumptions that carry the weight; Section~7 lists the experiments that test them. I checked numerically the passage-time formula and its bounds (ODE integration), the saturation asymptotics and the logistic identity of Theorem~1, the saddle-node asymptotics, the eigenvalue-perturbation formulas, the log-norm bound and its convexity (random matrices), and the Maxwell weight (a two-well diffusion). The data fits are described in Section~6 with their caveats.
+
+\section{Setting and hypotheses}
+
+Let $\theta\in\R^d$ collect the shared actor--critic parameters, agents $i=1,\dots,N$ ($N=5$), local rewards $r_i$, team reward $R=\sum_j r_j$, and mixed reward $x_i(w)=(1-w)r_i+wR$. Throughout, \cite{P} denotes the companion measurement paper (the TMLR submission ``Measuring Finite-Budget Coordination-Collapse Crossings in Reward-Mixed Cooperative MARL'', 19 pages); figure and table numbers refer to that PDF. Its testbed is a six-node inventory network (NetworkManagement-v1) in which node~1 is scripted and nodes~2--6 are trained by one parameter-shared PPO policy, so $N=5$ trained agents.
+
+\begin{hyp}[Mean-field limit]\label{h0}
+On the training horizon the learner is described by $\dot\theta=G^v_w(\theta)$, with $G^v_w$ a $C^1$ field, jointly in $(\theta,w)$. Seeds enter only through the initial condition $\theta(0)\sim\pi_0$. Time $T$ is proportional to requested agent transitions; the constant of proportionality is absorbed in the clock. Advantages are exact (critic converged). For the linear transform $v=\mathrm{id}$ write $G^{\mathrm{id}}_w=F_w$.
+\end{hyp}
+
+Hypothesis~\ref{h0} is the standard ODE method for stochastic approximation (Kushner--Yin; Borkar) and is \emph{assumed}, not proved, for PPO.
+
+\begin{lemma}[Affine pencil]\label{l1}
+Under Hypothesis~\ref{h0}, $F_w=(1-w)F_0+wF_1$ is affine in $w$, where $F_0(\theta)=\sum_i\E[\nabla_\theta\log\pi_\theta(a_i|o)\,A_i^{\mathrm{loc}}]$ is the simultaneous policy-gradient field of the local-reward game and $F_1=\nabla_\theta J_1$ is the gradient of the expected discounted team return. In general $F_0$ is not conservative, so $DF_0$ has a skew part; $F_1$ is conservative and $J_1$ is a Lyapunov function of $\dot\theta=F_1$ ($\tfrac{d}{dt}J_1=|F_1|^2\ge0$).
+\end{lemma}
+\begin{proof}
+The Bellman evaluation operator is linear in the reward, so $A_i^{w}=(1-w)A_i^{\mathrm{loc}}+wA^{\mathrm{team}}$ and the field, linear in the advantage, is affine in $w$. With parameter sharing the joint policy factorizes, $\nabla\log\pi(a|o)=\sum_i\nabla\log\pi_\theta(a_i|o)$, and the joint policy-gradient theorem gives $F_1=\nabla J_1$. The local-reward field credits agent $i$'s action only with $A_i^{\mathrm{loc}}$ and is the diagonal restriction of a simultaneous (not joint) gradient, hence not a gradient field unless the game is a potential game.
+\end{proof}
+
+\begin{hyp}[Clock and reparametrization]\label{h2}
+A reward transform $v$ acts as $G^v_w(\theta)=\kappa_v(\theta,w)\,F_{h_v(w)}(\theta)$, with $0<\kappa_{\min}\le\kappa_v\le\kappa_{\max}<\infty$ on the region visited, and $h_v:[0,1]\to\R$ a $C^1$ strictly increasing reparametrization of the mixing weight.
+\end{hyp}
+
+This family is exact for unit changes: multiplying local and team rewards by $c_\ell,c_g>0$ gives $G_w=[(1-w)c_\ell+wc_g]\,F_{q(w)}$ with $q(w)=wc_g/[(1-w)c_\ell+wc_g]$. That is, the paper's ``common reward-unit coordinate'' is exactly the reparametrization $h$, and its clock is $(1-w)c_\ell+wc_g$. For nonlinear $v$ it is a structural hypothesis (the transform reweights local and team gradient parts state-dependently); Section~6 shows what it implies and how it can fail.
+
+\begin{hyp}[Collapse label and rest point]\label{h4}
+There is a continuous ordering coordinate $x(\theta)$ (mean base-stock action) and a threshold $\xc$ with collapse at budget $T$ iff $x(\theta(T))<\xc$. The lazy state $\theta_L$ is a common rest point, $F_0(\theta_L)=F_1(\theta_L)=0$, so its Jacobian pencil is exactly affine, $A(w)=(1-w)A_0+wA_1$, $A_j=DF_j(\theta_L)$, with $A_1$ symmetric.
+\end{hyp}
+
+\paragraph{Definitions.} $C_T(w)=\P_{\pi_0}\big(x(\theta(T))<\xc\big)$ is the population collapse probability. The \emph{crossing} is $\wfifty(T)=\inf\{w:C_T(w)\le\tfrac12\}$ (no monotonicity assumed). The \emph{critical weight} is $\wcrit=\inf\{w:\alpha(w)\ge0\}$, where $\alpha(w)$ is the spectral abscissa of $A(w)$.
+
+\section{Layer I: exact structure (clock, orbits, asymptote)}
+
+\begin{lemma}[Time change]\label{l2}
+Let $F,G:\R^d\to\R^d$ be locally Lipschitz with $G=\kappa F$ for a function $\kappa$ with $0<\kappa_{\min}\le\kappa\le\kappa_{\max}$ ($\kappa$ of class $C^1$), and let solutions exist globally. Then (i) the orbits of $G$ and $F$ coincide; (ii) the equilibria coincide and at an equilibrium $\theta^*$, $DG(\theta^*)=\kappa(\theta^*)DF(\theta^*)$, so stability type, hyperbolicity, and critical parameter values coincide; (iii) the passage time of $G$ between any two sets is $\int_0^{s^*}du/\kappa(\theta(u))$, where $s^*$ is the passage time of $F$ along the same orbit; in particular for constant $\kappa$ it equals $s^*/\kappa$.
+\end{lemma}
+\begin{proof}
+Let $\theta(\cdot)$ solve $\dot\theta=F(\theta)$, $\theta(0)=\theta_0$, and set $\sigma(s)=\int_0^s du/\kappa(\theta(u))$, a $C^1$ strictly increasing bijection of $[0,\infty)$ because $\kappa\le\kappa_{\max}$ gives $\sigma(s)\ge s/\kappa_{\max}$. Define $\vartheta(t)=\theta(\sigma^{-1}(t))$. Then $\dot\vartheta(t)=F(\theta(s))/\sigma'(s)\big|_{s=\sigma^{-1}(t)}=\kappa(\vartheta(t))F(\vartheta(t))$, so $\vartheta$ solves the $G$-system, and by uniqueness it is \emph{the} solution; this gives (i) and (iii). For (ii), $G(\theta^*)=0\iff F(\theta^*)=0$, and $DG=\kappa DF+F\otimes\nabla\kappa$, where the second term vanishes at $\theta^*$.
+\end{proof}
+
+\begin{lemma}[Clock sandwich]\label{l3}
+Under the hypotheses of Lemma~\ref{l2}, with $C^F_T$ and $C^G_T$ the collapse probabilities of the two flows and $\wfifty^{F},\wfifty^{G}$ the associated crossings,
+\[
+C^F_{\kappa_{\max}T}(w)\;\le\;C^G_T(w)\;\le\;C^F_{\kappa_{\min}T}(w)\quad\forall w,T,
+\qquad
+\wfifty^{F}(\kappa_{\max}T)\;\le\;\wfifty^{G}(T)\;\le\;\wfifty^{F}(\kappa_{\min}T).
+\]
+\end{lemma}
+\begin{proof}
+Let $\tau_F,\tau_G$ be the first-passage times of the label region along the common orbit. By Lemma~\ref{l2}(iii), $\tau_F/\kappa_{\max}\le\tau_G\le\tau_F/\kappa_{\min}$. If $\tau_G>T$ then $\tau_F>\kappa_{\min}T$, so $C^G_T\le C^F_{\kappa_{\min}T}$; if $\tau_F>\kappa_{\max}T$ then $\tau_G>T$, so $C^G_T\ge C^F_{\kappa_{\max}T}$. (Here ``collapsed at $T$'' means ``not yet passed'', which is the deterministic-flow reading; recapture is treated in Section~5.) Set inclusion gives $\{w:C^F_{\kappa_{\min}T}\le\frac12\}\subseteq\{w:C^G_T\le\frac12\}\subseteq\{w:C^F_{\kappa_{\max}T}\le\frac12\}$; taking infima gives the crossing bounds.
+\end{proof}
+
+\begin{corollary}[Bounded clocks do not move the asymptote]\label{c1}
+If $\wfifty^F(T)\to w_\infty$ as $T\to\infty$, then $\wfifty^G(T)\to w_\infty$ for every bounded positive clock $\kappa$. For a constant clock, $\wfifty^G(T)=\wfifty^F(\kappa T)$ exactly. Consequently any transform effect that persists as $T\to\infty$ must change equilibria, orbit geometry, or the critical weight (it must enter through $h_v$ or a direction change), or have an unbounded clock.
+\end{corollary}
+
+\begin{remark}[Clock and temperature]\label{rm_noise}
+Lemma~\ref{l2} and Corollary~\ref{c1} concern the noise-free flow. For a diffusion limit with constant clock, $d\theta=\kappa F(\theta)\,dt+\kappa\sqrt\varepsilon\,dW_t$ (the learning-rate scaling: signal and per-step noise amplitude both multiplied by $\kappa$), put $\vartheta(s)=\theta(s/\kappa)$. Then $\vartheta(s)=\theta_0+\int_0^sF(\vartheta(v))\,dv+\kappa\sqrt\varepsilon\,W_{s/\kappa}$, and by Brownian scaling $\kappa W_{s/\kappa}\overset d=\sqrt\kappa\,\widetilde W_s$. Hence $\theta^{(\kappa,\varepsilon)}(t)\overset d=\theta^{(1,\kappa\varepsilon)}(\kappa t)$ as processes, and so
+\[
+C^{(\kappa,\varepsilon)}_T(w)=C^{(1,\kappa\varepsilon)}_{\kappa T}(w),\qquad \wfifty^{(\kappa,\varepsilon)}(T)=\wfifty^{(1,\kappa\varepsilon)}(\kappa T).
+\]
+A clock factor therefore rescales the temperature as well as the budget. The exact translation $T\mapsto\kappa T$ of Corollary~\ref{c1} holds at fixed temperature only when $\varepsilon=0$ (or is negligible against the relevant barrier); in the noise-driven regime (Proposition~\ref{p5}) a change of clock moves both the translation and the effective temperature. Experiment~3 of Section~7 measures this coupling directly.
+\end{remark}
+
+\section{Layer II: the lazy state --- Lyapunov certificate and perturbation}
+
+Let $\alpha(w)$ be the spectral abscissa of $A(w)$ and $\rho(w)=\lambda_{\max}\big(\Sym A(w)\big)$, $\Sym A=\tfrac12(A+A^\top)$, the logarithmic norm. For an ascent flow $\dot\theta=\nabla J$, stability of $\theta_L$ requires a \emph{negative} spectrum: $\theta_L$ is a local maximum of the team return iff $A_1\prec0$.
+
+\begin{proposition}[Lyapunov certificate and trace bound]\label{p1}
+Under Hypothesis~\ref{h4}:
+\begin{enumerate}[label=(\roman*)]
+\item $\alpha(w)\le\rho(w)$ for all $w$, and $\rho$ is convex in $w$.
+\item If $\rho(w)<0$, then $\theta_L$ is exponentially stable for $\dot\theta=F_w$, with local Lyapunov function $V(\theta)=\tfrac12|\theta-\theta_L|^2$, satisfying $\dot V\le-|\rho(w)|\,V$ on a ball.
+\item $\alpha(w)\ge\tr A(w)/d$, so $\alpha(w)>0$ whenever $\tr A(w)>0$.
+\item Suppose $\rho(0)<0<\rho(1)$ and $\tr A_0<0<\tr A_1$. Then $\rho$ has exactly one zero $w_{\mathrm{cert}}\in(0,1)$, the trace function has exactly one zero $w_{\mathrm{tr}}=\tr A_0/(\tr A_0-\tr A_1)$, and
+\[
+w_{\mathrm{cert}}\;\le\;\wcrit\;\le\;w_{\mathrm{tr}} .
+\]
+If $A_0$ is also symmetric (the local game is a potential game), $\alpha=\rho$ and $\wcrit=w_{\mathrm{cert}}$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(i) For a unit eigenvector $u$ with $Au=\lambda u$, $\operatorname{Re}\lambda=\operatorname{Re}(u^*Au)=u^*\Sym(A)\,u\le\rho$. Since $A(w)$ is affine in $w$ and $\lambda_{\max}$ is a supremum of linear functionals on symmetric matrices, hence convex, $\rho$ is convex.
+(ii) Write $\delta=\theta-\theta_L$. Then $\dot V=\delta^\top F_w(\theta_L+\delta)=\delta^\top A\delta+\delta^\top r(\delta)$ with $|r(\delta)|=o(|\delta|)$. Choose a ball on which $|r(\delta)|\le\frac12|\rho||\delta|$; there $\dot V\le\rho|\delta|^2+\frac12|\rho||\delta|^2=-\frac12|\rho||\delta|^2=-|\rho|V$.
+(iii) The trace is the sum of the eigenvalues, so the largest real part is at least their mean real part $\tr A/d$.
+(iv) A convex function that is negative at 0 and positive at 1 has exactly one zero in between. By (i)--(ii), $\alpha<0$ on $[0,w_{\mathrm{cert}})$, so $\wcrit\ge w_{\mathrm{cert}}$. The trace is affine and increasing under the stated signs; by (iii) $\alpha>0$ beyond $w_{\mathrm{tr}}$, so $\wcrit\le w_{\mathrm{tr}}$. If $A_0$ is symmetric then $A(w)$ is symmetric, so $\alpha=\rho$.
+\end{proof}
+
+\begin{proposition}[Perturbation of the critical weight]\label{p2}
+Let $\alpha(\wcrit)=0$ be a simple real eigenvalue of $A(\wcrit)$ with right and left eigenvectors $r,\ell$, $\ell^\top r=1$. Then $\alpha$ is $C^1$ near $\wcrit$ with
+\[
+a:=\alpha'(\wcrit)=\ell^\top(A_1-A_0)\,r .
+\]
+If the pencil is perturbed to $A^v(w)=A(w)+\epsilon B(w)$ with $B$ continuous, then
+\[
+\wcrit^{\,v}=\wcrit-\epsilon\,\frac{\ell^\top B(\wcrit)\,r}{a}+O(\epsilon^2),
+\]
+provided $a\neq0$. In particular: a positive clock leaves $\wcrit$ unchanged and multiplies $a$ by $\kappa(\wcrit)$; a reparametrization $A^v(w)=A(h(w))$ gives $\wcrit^{\,v}=h^{-1}(\wcrit)$; and for unit multipliers $(c_\ell,c_g)$,
+\[
+\wcrit^{\,v}=\frac{c_\ell\,\wcrit}{c_g(1-\wcrit)+c_\ell\,\wcrit}.
+\]
+\end{proposition}
+\begin{proof}
+A simple root of $P(w,\lambda)=\det(A(w)-\lambda I)$ has $\partial_\lambda P\ne0$, so the implicit function theorem gives a $C^1$ branch $\lambda(w)$ (the leading eigenvalue near $\wcrit$, isolated from the rest of the spectrum), and the standard simple-eigenvalue formula (Kato) gives $\lambda'(w)=\ell^\top A'(w)r/\ell^\top r$, which at $\wcrit$ is the stated $a$. The same formula applied to $A+\epsilon B$ gives $\alpha^v(w)=\alpha(w)+\epsilon\,\ell^\top B(w)r+O(\epsilon^2)$ uniformly near $\wcrit$; solving $\alpha^v(\wcrit^{\,v})=0$ with $\alpha'(\wcrit)=a\ne0$ yields the shift. A clock scales $A$ by $\kappa>0$ (zero set unchanged, slope scaled); a reparametrization composes $\alpha$ with $h$; the unit-multiplier formula solves $q(\wcrit^{\,v})=\wcrit$.
+\end{proof}
+
+\section{Layer II (continued): the finite-budget crossing law}
+
+\begin{hyp}[Critical-mode reduction]\label{h3}
+Assume $F_w\in C^3$ near $(\theta_L,\wcrit)$, with the pencil of Hypothesis~\ref{h4} and a constant clock $\kappa$ and reparametrization $h$ as in Hypothesis~\ref{h2}.
+\begin{enumerate}[label=(\alph*)]
+\item \emph{Spectral.} $A(\wcrit)$ has a simple real eigenvalue $0$ with right and left eigenvectors $r,\ell$ ($\ell^\top r=1$), the rest of its spectrum lies in $\{\operatorname{Re}\lambda\le-g\}$ for some $g>0$, and $a=\ell^\top(A_1-A_0)\,r>0$.
+\item \emph{Reduced equation.} By the center-manifold theorem for the suspended system $(\theta,w)$ there is a locally invariant $C^2$ manifold $\mathcal M=\{\theta_L+x\,r+\eta(x,w):|x|\le x_{\max}\}$, with $\eta(0,w)=0$ and $\eta=O(x^2)$ at $w=\wcrit$, on which
+\[
+\dot x=\kappa\big(\mu(w)\,x-\chi x^2+\rho(x,w)\big),\qquad |\rho(x,w)|\le C|x|^3,
+\]
+with $\mu(w)\approx a\big(h(w)-\wcrit\big)$ and $\chi=-\tfrac12\,\ell^\top D^2F_{\wcrit}(\theta_L)[r,r]>0$.
+The amplitude $x=0$ is invariant because $\theta_L$ is a rest point for every $w$. Theorem~\ref{t1} uses the \emph{normal-form truncation}: $\rho\equiv0$, $\chi$ constant, and $\mu(w)=a(h(w)-\wcrit)$ exactly.
+\item \emph{Projection of the label and the initial law.} Let $\xi(\theta)$ be the amplitude of the point of $\mathcal M$ to which the orbit of $\theta$ is asymptotic along the stable fibres (asymptotic phase; Carr, Fenichel). Assume: (i) the initial law is supported in the domain of this foliation and $\Pi_0$ is the law of $\xi(\theta_0)$, $\theta_0\sim\pi_0$; (ii) the collapse label is fibre-compatible: $\{\theta:x(\theta)<\xc\}$ is a union of stable fibres, so that $x(\theta(T))<\xc$ iff $\xi(\theta(T))<\xc$, and $\xc\le x_{\max}$; (iii) time-scale separation: fibre transients, which decay like $e^{-\kappa g t}$, have died out, i.e.\ $T\gg1/(\kappa g)$. (This condition is checkable once $g$ is known; Experiment~6 of Section~7 estimates $g$ from the Jacobian and thereby determines whether a given horizon satisfies it.)
+\item \emph{Initial law.} $0<\xi(\theta_0)<\xc$ almost surely, with $\Pi_0$ continuous and strictly increasing on $(0,\xc)$ and median $\xmed$.
+\end{enumerate}
+\end{hyp}
+
+\begin{remark}[Symmetry and multiplicity of the critical mode]\label{rm_sym}
+Hypothesis~\ref{h3}(a) asks for a \emph{simple} real critical eigenvalue. Three mechanisms can break it.
+\emph{(1) Exchange symmetry.} If the trained agents are exchangeable (identical parameters, symmetric network positions), a finite group $\Gamma\le S_N$ acts on $\R^d$ with $F_0,F_1$ equivariant and $\theta_L$ fixed. Then $A(w)$ commutes with the representation and its spectrum splits into isotypic blocks. If the critical eigenvalue lies in the trivial block it can still be simple and everything above holds on the flow-invariant subspace $\mathrm{Fix}(\Gamma)$; symmetry-breaking components lie in the stable remainder of the spectrum and decay. If it lies in a nontrivial irreducible block of dimension $m$, it has multiplicity $m$, the reduced flow is $m$-dimensional, and Theorem~\ref{t1} does not apply. For instance, a two-agent variant with exact $\mathbb Z_2$ exchange symmetry removes the quadratic term via the sign representation and gives the pitchfork variant of Remark~\ref{rm_beyond}. In the five-agent testbed of~\cite{P}, the permutation representation of $S_5$ decomposes as trivial $\oplus$ standard (dimension $4$); if the critical eigenvalue lies in the standard block the reduced dynamics are four-dimensional and no scalar passage-time formula is available without further symmetry breaking.
+\emph{(2) Non-normality.} $F_0$ is not conservative, so $A_0$ is not symmetric and the leading eigenvalue may be a complex pair crossing the imaginary axis (a Hopf crossing, with oscillatory rather than monotone amplitude). The hypothesis excludes this; in a computed pencil the check is $\operatorname{Im}\lambda=0$ at the crossing.
+\emph{(3) Near-degeneracy.} A small spectral gap $g$ shrinks the validity radius $x_{\max}$ of the center manifold, lengthens the fast time $1/(\kappa g)$ in (c)(iii), and inflates the sensitivity of $r,\ell$ to perturbation (Corollary~\ref{c2}(v)). In the testbed of~\cite{P} (six-node network, node~1 scripted, nodes~2--6 under one shared policy) I have not checked whether the five trained nodes are exchangeable; if they are only approximately so, case~(3) is the relevant one.
+\end{remark}
+
+\begin{remark}[The projection step, and beyond the logistic form]\label{rm_beyond}
+\emph{Projection.} Hypothesis~\ref{h3}(c) is an assumption about the experiment and not a consequence of (a)--(b): a randomly initialised policy is not near $\theta_L$ in general, the label (a mean base-stock action) is a nonlinear function that mixes the critical and fast directions, and at small $T$ the fast transients have not decayed. Passage times then carry an $O(1/(\kappa g))$ transient and a label-misalignment error, and $x_0$ is the asymptotic phase of $\theta_0$, not its naive projection. The theory is thus a model for $T\gtrsim1/(\kappa g)$; the earliest horizon (150k) is the one most likely to violate it.
+
+\emph{General saturation.} Let the reduced field be $\dot x=\kappa\,x\,(\mu-\varphi(x))$ with $\varphi\in C^1[0,\xc]$, $\varphi(0)=0$, $\varphi'>0$ (the logistic case is $\varphi=\chi x$), and put $\nu:=\varphi(\xc)$. Then Lemma~\ref{l4}'s monotonicity (for $\mu>\nu$) and Theorem~\ref{t1}(a),(d) hold verbatim, since $\kappa\tau=\int_{x_0}^{\xc}dx/(x(\mu-\varphi))$ is decreasing in $x_0$ and in $\mu$; moreover
+\[
+\kappa\mu\,\tau=L+\int_{x_0}^{\xc}\frac{\varphi(x)}{x\,(\mu-\varphi(x))}\,dx\ \ge\ L,
+\]
+so $\kappa T\mu_T\ge L$ still holds, the $1/T$ intercept is still $\wcrit^{\,v}$, and $w_\infty$ is given by $h(w_\infty)=\wcrit+\varphi(\xc)/a$. The explicit constants of Theorem~\ref{t1}(b),(c),(e) change.
+
+\emph{Pitchfork variant.} If the quadratic coefficient vanishes (for example by a $\mathbb Z_2$ symmetry in a two-agent variant; Remark~\ref{rm_sym}) and $\dot x=\kappa(\mu x-\chi_3x^3)$ with $\chi_3>0$, put $\nu=\chi_3\xc^2$, $\nu_0=\chi_3\xmed^2$. Then
+\[
+\kappa T\mu_T=L+\tfrac12\ln\frac{\mu_T-\nu_0}{\mu_T-\nu},\qquad \mu_T-\nu\sim\nu\,(e^{2L}-1)\,e^{-2\kappa\nu T},
+\]
+and $\mu_T\ge2\nu$ iff $T\le\big(L+\tfrac12\ln(2-e^{-2L})\big)/(2\kappa\nu)$.
+The $1/T$ intercept is again $\wcrit^{\,v}$, but the asymptotic offset is $\nu/a=\chi_3\xc^2/a$, quadratic in the label threshold (Corollary~\ref{c4}).
+\end{remark}
+
+Write $L=\ln(\xc/\xmed)>0$, $\nu=\chi\xc$ (the saturation rate at the label threshold), $\nu_0=\chi\xmed<\nu$, and $x^*=\mu/\chi$.
+
+\begin{lemma}[Passage time]\label{l4}
+For $\mu>\nu$, the time for $\dot x=\kappa(\mu x-\chi x^2)$ to go from $x_0$ to $\xc$ is
+\[
+\tau(x_0;\mu)=\frac1{\kappa\mu}\ln\!\left[\frac{\xc\,(x^*-x_0)}{x_0\,(x^*-\xc)}\right],
+\]
+which is continuous and strictly decreasing in $x_0$ (from $+\infty$ at $0^+$ to $0$ at $\xc$) and strictly decreasing in $\mu$ (from $+\infty$ at $\nu^+$ to $0$ as $\mu\to\infty$). For $\mu\le\nu$ the amplitude never reaches $\xc$ (the attractor $x^*\le\xc$).
+\end{lemma}
+\begin{proof}
+Separate variables: $\int dx/[x(\mu-\chi x)]=\mu^{-1}\ln[x/(\mu-\chi x)]$; evaluating between $x_0$ and $\xc$ and writing $\mu-\chi x=\chi(x^*-x)$ gives the formula. Monotonicity in $x_0$ is evident from the formula (or from the integral $\kappa^{-1}\int_{x_0}^{\xc}dx/g$ with $g>0$). Monotonicity in $\mu$ follows from the comparison principle, since $\mu x-\chi x^2$ is increasing in $\mu$ for $x>0$. The limits follow from the formula.
+\end{proof}
+
+\begin{theorem}[Finite-budget crossing]\label{t1}
+Under Hypothesis~\ref{h3}, the crossing satisfies:
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Inverse passage-time law.} $C_T(w)=\Pi_0(\xi_T(w))$ for $\mu(w)>\nu$ (and $C_T\equiv1$ otherwise), where $\xi_T(w)=x^*y/(1+y)$ with $y=\xc\,e^{-\kappa T\mu}/(x^*-\xc)$. $C_T$ is nonincreasing in $T$ and strictly decreasing in $w$ on $\{\mu>\nu\}$, and $\wfifty(T)$ is the unique $w$ with $\tau(\xmed;\mu(w))=T$. Equivalently $\mu_T:=\mu(\wfifty(T))$ is the unique root in $(\nu,\infty)$ of
+\[
+\kappa T\mu_T\;=\;L+\ln\frac{\mu_T-\nu_0}{\mu_T-\nu}. \tag{E}
+\]
+\item \textbf{$1/T$ regime and its window.} For all $T$, $L\le\kappa T\mu_T\le L+\ln\dfrac{\mu_T}{\mu_T-\nu}$. Moreover $\mu_T\ge2\nu$ if and only if $T\le\Tstar$, where
+\[
+\Tstar:=\frac{L+\ln\!\big(2-e^{-L}\big)}{2\kappa\nu}\ \in\ \Big(\frac{L}{2\kappa\nu},\ \frac{L+\ln2}{2\kappa\nu}\Big),
+\]
+and for $T\le\Tstar$ one has $\kappa T\mu_T\in[L,L+\ln2]$, i.e.
+\[
+h(\wfifty(T))=\wcrit+\frac{L+\varepsilon_T}{a\,\kappa\,T},\qquad \varepsilon_T\in[0,\ln2].
+\]
+Equivalently the window is $\wfifty(T)\ge h^{-1}(\wcrit+2\nu/a)$. In units of the saturation time $1/(\kappa\nu)$ it ends at about $L/2$; it scales as $\Tstar\propto1/\kappa$, so faster clocks leave it earlier. For $T>\Tstar$ the crossing is within $\nu/a$ (in $h$-units) of $w_\infty$ and approaches it exponentially by~(c).
+\item \textbf{Exponential saturation.} As $T\to\infty$, $\mu_T\downarrow\nu$ with $(\mu_T-\nu)\sim\nu\,(e^{L}-1)\,e^{-\kappa\nu T}$. Hence $\wfifty(T)\to w_\infty:=h^{-1}(\wcrit+\nu/a)$ and $\wfifty(T)-w_\infty\sim\dfrac{\nu(e^L-1)}{a\,h'(w_\infty)}\,e^{-\kappa\nu T}$.
+\item \textbf{Clock covariance.} $\wfifty$ depends on $(\kappa,T)$ only through $\kappa T$: $\wfifty^{(\kappa)}(T)=\wfifty^{(1)}(\kappa T)$; $w_\infty$ does not depend on $\kappa$.
+\item \textbf{Logistic structure.} If $\ln x_0\sim\mathrm{Logistic}(\ln\xmed,s)$, then exactly
+\[
+\logit C_T(w)=\frac1s\Big[L-\kappa T\mu(w)+\epsilon_T(w)\Big],\qquad \epsilon_T(w)=-\ln\!\big(1-\tfrac{\nu}{\mu}\big)-\ln(1+y),
+\]
+with $\epsilon_T\to0$ when $\nu/\mu\to0$ and $\kappa T\mu\to\infty$. For affine $h(w)=h_0+h_1w$ this is, up to $\epsilon_T$, the logistic regression $b_0+b_1w$ used in the paper, with $b_1\approx-\kappa a h_1T/s$ and midpoint as in (b).
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) Collapse at $T$ means $x(T)<\xc$. In the half-line flow $\{x\ge\xc\}$ is forward invariant (since $\dot x>0$ at $\xc$ when $\mu>\nu$), so $x(T)<\xc$ iff the passage time exceeds $T$, i.e.\ $\tau(x_0;\mu)>T$. By Lemma~\ref{l4}, $\tau(\cdot;\mu)$ is a strictly decreasing bijection $(0,\xc)\to(0,\infty)$, so this is $x_0<\xi_T$, where $\xi_T$ solves $\tau(\xi;\mu)=T$; inverting the formula, $\xi/(x^*-\xi)=\xc e^{-\kappa T\mu}/(x^*-\xc)=y$, i.e.\ $\xi=x^*y/(1+y)$. So $C_T(w)=\Pi_0(\xi_T(w))$. Monotonicity: $\xi_T$ is decreasing in $\mu$, hence $C_T$ decreases in $w$, and in $T$ since the passage time exceeds $T$ less often as $T$ grows. $C_T(w)=\tfrac12$ iff $\xi_T(w)=\xmed$ (continuity and strict monotonicity of $\Pi_0$) iff $\tau(\xmed;\mu(w))=T$. By Lemma~\ref{l4}, $\mu\mapsto\tau(\xmed;\mu)$ is a strictly decreasing bijection $(\nu,\infty)\to(0,\infty)$, so a unique $\mu_T$ exists. Using $x^*-x=(\mu-\chi x)/\chi$ in the passage-time formula, $\kappa T\mu_T=\ln[(\xc/\xmed)(\mu_T-\nu_0)/(\mu_T-\nu)]$, which is (E).
+
+(b) $\nu_0\ge0$ gives $(\mu_T-\nu_0)/(\mu_T-\nu)\le\mu_T/(\mu_T-\nu)$, and $\nu_0<\nu$ gives the ratio $\ge1$; this is the first display. By Lemma~\ref{l4}, $\mu\mapsto\tau(\xmed;\mu)$ is strictly decreasing, so $\mu_T\ge2\nu$ iff $T=\tau(\xmed;\mu_T)\le\tau(\xmed;2\nu)$. At $\mu=2\nu$ we have $x^*=2\xc$, and the passage-time formula gives $2\kappa\nu\,\tau=\ln\!\big[(\xc/\xmed)(2\xc-\xmed)/\xc\big]=L+\ln(2-e^{-L})$, which is $\Tstar\cdot2\kappa\nu$; and $0<\ln(2-e^{-L})<\ln2$ for $L>0$. If $\mu_T\ge2\nu$ then $\ln[\mu_T/(\mu_T-\nu)]\le\ln2$.
+
+(c) From (E), $\mu_T-\nu=e^{L-\kappa T\mu_T}(\mu_T-\nu_0)$. As $T\to\infty$, $\tau(\xmed;\cdot)\to\infty$ only as $\mu\downarrow\nu$, so $\mu_T\downarrow\nu$ and $\mu_T-\nu_0\to\nu-\nu_0=\nu(1-e^{-L})$. Since $\mu_T-\nu$ decays exponentially, $T(\mu_T-\nu)\to0$, hence $e^{-\kappa T\mu_T}\sim e^{-\kappa\nu T}$, giving $\mu_T-\nu\sim e^L\,\nu(1-e^{-L})\,e^{-\kappa\nu T}$. Finally $h(\wfifty)-h(w_\infty)=(\mu_T-\nu)/a$ and a first-order expansion of $h$.
+
+(d) $\kappa$ and $T$ appear in (E) only as $\kappa T$, while $\nu,\nu_0,L,a,h$ do not involve $\kappa$.
+
+(e) Taking logs in $\xi_T=x^*y/(1+y)$: $\ln\xi_T=\ln\xc-\kappa T\mu-\ln(1-\nu/\mu)-\ln(1+y)$, using $x^*/(x^*-\xc)=1/(1-\nu/\mu)$. For logistic $\ln x_0$, $\logit\Pi_0(\xi)=(\ln\xi-\ln\xmed)/s$, which gives the stated expression with $L=\ln(\xc/\xmed)$.
+\end{proof}
+
+\begin{corollary}[Identification of threshold and clock]\label{c2}
+For horizons $T\le\Tstar$ (Theorem~\ref{t1}(b),(e)) and $h(w)=h_0+h_1w$, put $A_v:=\kappa a h_1$ and $\wcrit^{\,v}:=h^{-1}(\wcrit)=(\wcrit-h_0)/h_1$. Then
+\[
+\wfifty(T)\approx\wcrit^{\,v}+\frac{L}{A_vT},\qquad |b_1(T)|\approx\frac{A_vT}{s}.
+\]
+Therefore: (i) from two horizons, $\wcrit^{\,v}=\dfrac{T_1\wfifty(T_1)-T_2\wfifty(T_2)}{T_1-T_2}$ (both horizons inside the window; outside it the right-hand side is an effective value between $\wcrit^{\,v}$ and $w_\infty$, and it tends to $w_\infty$ for $T_1,T_2\gg\Tstar$); (ii) the product $|b_1|\,(\wfifty-\wcrit^{\,v})\approx L/s$ is the same at every $T$ and for every arm sharing the same initial law and label, whatever its clock $\kappa$ and slope $h_1$; (iii) hence, for a reference arm with threshold $\wcrit$ and an arm $v$ observed at one horizon,
+\[
+\frac{|b_1^{v}|\,(\wfifty^{v}-\wcrit)}{|b_1^{\mathrm{ref}}|\,(\wfifty^{\mathrm{ref}}-\wcrit)}=\frac{\wfifty^{v}-\wcrit}{\wfifty^{v}-\wcrit^{\,v}},
+\]
+which equals $1$ for a pure clock and exceeds $1$ iff the threshold has moved \emph{right} ($\wcrit^{\,v}>\wcrit$); and (iv) a scalar-scale arm ($h=\mathrm{id}$) must have $\wcrit^{S}=\wcrit^{B}$ and a clock ratio $\kappa_S/\kappa_B=(\wfifty^B-\wcrit)/(\wfifty^S-\wcrit)$; and (v) \emph{caveat (eigenpair stability).} Items (ii)--(iv) assume that all arms share the ratio $L/s$. If a transform perturbs the pencil by $\epsilon B$, the critical eigenpair moves by $O(\epsilon\|S\|\|B\|)$, where $S$ is the reduced resolvent of $A(\wcrit)$ on the stable subspace ($\|S\|\sim1/g$ for normal $A$; for non-normal $A$, $\|S\|\le\|P_s\|/g$ where $P_s$ is the spectral projection onto the stable subspace, and $\|P_s\|$ can be amplified by the condition number of the eigenbasis---relevant here because $A_0$ has a skew part by Lemma~\ref{l1}). This changes the amplitude $L_v=\ln(\xc^v/\xmed^v)$ measured in the critical coordinate and the spread $s_v$, so that $|b_1^v|(\wfifty^v-\wcrit^{\,v})\approx r_v\,L/s$ with $r_v:=(L_v/s_v)/(L/s)=1+O(\epsilon\|S\|\|B\|)$. With $r_v$, the left side of (iii) is multiplied by $r_v$ and the implied threshold is $\wfifty^v-r_vQ^{\mathrm{ref}}/|b_1^v|$, with $Q^{\mathrm{ref}}=|b_1^{\mathrm{ref}}|(\wfifty^{\mathrm{ref}}-\wcrit)$. A ratio in (iii) different from $1$ therefore shows that the arm is not a pure clock, but it cannot by itself distinguish a threshold shift from a change of $L_v/s_v$ produced by a rotated critical direction; the two-horizon intercept (i), which does not use $L/s$, can.
+\end{corollary}
+\begin{proof}
+With $h(w)=h_0+h_1w$ we have $\mu(w)=ah_1(w-\wcrit^{\,v})$. Theorem~\ref{t1}(b) gives $\kappa ah_1(\wfifty-\wcrit^{\,v})T\approx L$, the midpoint; differentiating $\logit C_T$ in $w$ gives the slope. (i) is the exact solution of the two linear equations $\wfifty(T_j)=\wcrit^{\,v}+L/(A_vT_j)$ for $\wcrit^{\,v}$. (ii) multiply the two displayed relations. (iii) divide the products for $v$ and ref, using (ii) with each arm's own threshold. (iv) is (iii) with $h=\mathrm{id}$ and the midpoint relation. (v) By Kato's first-order formula for a simple eigenvector, $\delta r=O(\epsilon\|S\|\|B\|)$ and likewise for $\ell$; $L_v$ and $s_v$ are smooth functions of the coordinate $x_v=\ell_v^\top(\theta-\theta_L)$ and of the label's projection on $r_v$. Repeating the derivation of the midpoint and slope with $L_v/s_v$ in place of $L/s$ gives the stated relations.
+\end{proof}
+
+\begin{corollary}[Clock-only contrast decays]\label{c3}
+For two clock-only arms $u,v$ (same $h$, same $\wcrit$, clocks $\kappa_u,\kappa_v$) for $T$ below both arms' windows $\Tstar$ (Theorem~\ref{t1}(b)), $\wfifty^{v}(T)-\wfifty^{u}(T)\approx\dfrac{L}{a h_1T}\Big(\dfrac1{\kappa_v}-\dfrac1{\kappa_u}\Big)\propto1/T$, and in the saturated regime the contrast tends to $0$ (they share $w_\infty$). A contrast that persists, or shrinks slower than $1/T$, therefore signals a threshold shift ($\wcrit^{\,v}\ne\wcrit^{\,u}$) or a noise-driven class (Proposition~5).
+\end{corollary}
+
+\begin{corollary}[Asymptote offset: $w_\infty\neq\wcrit$]\label{c4}
+Under Hypothesis~\ref{h3} (normal-form truncation), the $T\to\infty$ crossing and the threshold differ by
+\[
+w_\infty-\wcrit^{\,v}=h^{-1}\!\Big(\wcrit+\frac{\chi\xc}{a}\Big)-h^{-1}(\wcrit)=\frac{\chi\,\xc}{a\,h'(\bar w)}>0,
+\]
+for some $\bar w$ between the two arguments (equal to $\chi\xc/(ah_1)$ for affine $h$). The offset (i) is strictly positive; (ii) is proportional, to first order, to the label threshold $\xc$, and is independent of the clock $\kappa$ and of the initial law $\Pi_0$; and (iii) vanishes as $\xc\downarrow0$. \emph{Testable consequence:} relabeling the same runs with a threshold $\xc'$ moves $w_\infty$ by $\chi(\xc'-\xc)/(ah_1)$, leaves the $1/T$ intercept $\wcrit^{\,v}$ unchanged, and shifts $L$ by $\ln(\xc'/\xc)$. The other classes predict different dependence on $\xc$: quadratic for the pitchfork variant (Remark~\ref{rm_beyond}); none for the bistable boundary (Proposition~\ref{p3}, where $w_B$ depends on the initial law instead) and for the saddle-node ghost (the bottleneck location $w_s$ does not involve the label); and no asymptote within budget in the noise-driven class.
+\end{corollary}
+\begin{proof}
+By Theorem~\ref{t1}(c), $\mu(w_\infty)=\nu=\chi\xc$, and $\mu=a(h-\wcrit)$, so $h(w_\infty)=\wcrit+\chi\xc/a$; the $1/T$ intercept is $h^{-1}(\wcrit)=\wcrit^{\,v}$ by Theorem~\ref{t1}(b). The mean value theorem gives the stated form, and $h'>0$ gives positivity. Relabeling changes only $\xc$ and hence $\nu$ and $L$: $\Pi_0$ is the law of the asymptotic phase $\xi(\theta_0)$, which does not depend on the label (Hypothesis~\ref{h3}(c)), and fibre-compatibility holds for the new label by assumption. In Proposition~\ref{p3}, $w_B$ solves $x_s(w_B)=\xmed$ and $x_s$ is the zero of $g$, which does not involve $\xc$ as long as $\xc>x_s$; in Proposition~\ref{p4}, $w_s$ is the saddle-node parameter.
+\end{proof}
+
+\section{Layer III: other classes, basins, noise, relapse}
+
+\begin{proposition}[Bistable basin boundary]\label{p3}
+Let $\dot x=\kappa g(x;w)$ on $[0,\infty)$ with $g(0;w)=0$, $g_x(0;w)<0$ (lazy stable), a single interior zero $x_s(w)\in(0,\xc)$ with $\gamma=g_x(x_s;w)>0$ (a saddle on the line), $g>0$ on $(x_s,\xc]$, and $g_w>0$. Then $x_s$ is strictly decreasing in $w$; $C_\infty(w)=\Pi_0(x_s(w))$; the asymptotic crossing $w_B$ is the unique root of $x_s(w_B)=\xmed$ (so \emph{it depends on the initial law}); and
+\[
+\wfifty(T)\downarrow w_B,\qquad \wfifty(T)-w_B\asymp\frac{e^{-\kappa\gamma T}}{|x_s'(w_B)|}.
+\]
+The asymptote $w_B$ is invariant to any bounded positive clock (Corollary~\ref{c1}).
+\end{proposition}
+\begin{proof}
+Differentiating $g(x_s(w);w)=0$ gives $x_s'=-g_w/g_x<0$. A trajectory starting below $x_s$ decays to $0$ and is collapsed forever; one starting in $(x_s,\xc)$ reaches $\xc$ in time $\tau(x_0)=\kappa^{-1}\int_{x_0}^{\xc}dx/g$, finite. So $C_T(w)=\Pi_0(\xi_T(w))$ with $\xi_T\in(x_s,\xc)$ solving $\tau(\xi)=T$, and $\xi_T\downarrow x_s$ as $T\to\infty$, since $\tau(\xi)\to\infty$ as $\xi\downarrow x_s$. Thus $C_\infty(w)=\Pi_0(x_s(w))$, and $C_T(w)=\tfrac12$ requires $\xi_T(w)=\xmed$, which has a solution iff $x_s(w)<\xmed$, i.e.\ $w>w_B$. Near a simple zero, $\tau(\xi)=\frac1{\kappa\gamma}\ln\frac1{\xi-x_s}+O(1)$, so $\xmed-x_s(\wfifty(T))\asymp e^{-\kappa\gamma T}$ and the stated rate follows by the mean value theorem.
+\end{proof}
+
+\begin{proposition}[Saddle-node bottleneck]\label{p4}
+Let $\dot x=\kappa\big(\varepsilon(w)+qx^2\big)$ with $\varepsilon(w)=p(h(w)-w_s)>0$ (a ghost of a saddle-node), $q,p>0$, median start $\xmed<0$ and label $\xc>0$ fixed. Then
+\[
+\tau=\frac{\pi}{\kappa\sqrt{\varepsilon q}}-\frac1{\kappa q}\Big(\frac1{\xc}+\frac1{|\xmed|}\Big)+O(\varepsilon),
+\qquad
+h(\wfifty(T))-w_s=\frac{\pi^2}{p\,q\,\kappa^2T^2}\big(1+O(T^{-1})\big).
+\]
+\end{proposition}
+\begin{proof}
+$\tau=\kappa^{-1}\int_{\xmed}^{\xc}dx/(\varepsilon+qx^2)=(\kappa\sqrt{\varepsilon q})^{-1}[\arctan(\xc\sqrt{q/\varepsilon})+\arctan(|\xmed|\sqrt{q/\varepsilon})]$. Use $\arctan y=\pi/2-1/y+O(y^{-3})$ as $y\to\infty$. Setting $\tau=T$ and solving for $\varepsilon$ gives $\sqrt\varepsilon=\pi/(\kappa\sqrt q\,T)(1+O(1/T))$.
+\end{proof}
+
+\begin{proposition}[Noise-driven regime and the stationary boundary]\label{p5}
+Consider the reversible case $d\theta=\nabla J_w\,dt+\sqrt\varepsilon\,dW$ with $J_w=(1-w)J_0+wJ_1$ and $J_w\to-\infty$ at infinity, so the invariant law is $\propto e^{2J_w/\varepsilon}$. Let $\theta_L(w),\theta_C(w)$ be nondegenerate local maxima (lazy, cooperative) with values $V_L(w),V_C(w)$ and Hessians $H_L,H_C$, and suppose the \emph{dilemma condition} $(J_1-J_0)(\theta_C(w))>(J_1-J_0)(\theta_L(w))$ for all $w$, with $V_C(0)<V_L(0)$ and $V_C(1)>V_L(1)$.
+\begin{enumerate}[label=(\roman*)]
+\item $V_C-V_L$ is strictly increasing in $w$ with a unique zero $w_M\in(0,1)$ (the \emph{Maxwell weight}). With $\Delta_{\mathrm{loc}}(w)=J_0(\theta_L(w))-J_0(\theta_C(w))$ and $\Delta_{\mathrm{team}}(w)=J_1(\theta_C(w))-J_1(\theta_L(w))$, evaluated at the maximizers of $J_w$, the Maxwell weight solves the self-consistent equation
+\[
+w_M=\frac{\Delta_{\mathrm{loc}}(w_M)}{\Delta_{\mathrm{loc}}(w_M)+\Delta_{\mathrm{team}}(w_M)}.\tag{S}
+\]
+If the maximizers do not depend on $w$ (for example if $\theta_L,\theta_C$ are critical points of both $J_0$ and $J_1$), the $\Delta$'s are constants and (S) is the closed form $w_M=\Delta_{\mathrm{loc}}/(\Delta_{\mathrm{loc}}+\Delta_{\mathrm{team}})$. In general that closed form, with the $\Delta$'s evaluated at the maximizers of a reference weight $w_{\mathrm{ref}}$, is a \emph{zeroth-order approximation}: it is exact at $w_{\mathrm{ref}}=w_M$, and its error is first order in $w_{\mathrm{ref}}-w_M$ times the rate at which the maximizers move.
+In the coordinate $q$ of Hypothesis~\ref{h2} the same relations hold unit-free: $q_M=\Delta_{\mathrm{loc}}/(\Delta_{\mathrm{loc}}+\Delta_{\mathrm{team}})$ at fixed maximizers.
+\item The stationary crossing satisfies $w_{50}^{\mathrm{stat}}(\varepsilon)=w_M+O(\varepsilon)$ as $\varepsilon\to0$.
+\item (Eyring--Kramers.) If $\Delta J_L(w)=J_w(\theta_s)-J_w(\theta_L)\approx c(w_k-w)$ is the barrier to the saddle $\theta_s$, escape is asymptotically exponential and
+\[
+\wfifty(T)=w_k-\frac{\varepsilon}{2c}\ln\frac{T}{\tau_0\ln2}\ (1+o(1)),
+\]
+a \emph{log law}, for which a clock factor acts as $\varepsilon\to\kappa\varepsilon$, $T\to\kappa T$ (Remark~\ref{rm_noise}). Relapse (recapture) makes $C_T(w)$ relax to its stationary value at rate $r_{\mathrm{esc}}+r_{\mathrm{rel}}$, with stationary crossing at $r_{\mathrm{esc}}=r_{\mathrm{rel}}$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}[Proof sketch]
+(i) $V_i(w)=J_w(\theta_i(w))$, and since $\nabla J_w(\theta_i(w))=0$, the envelope theorem (valid with moving maximizers) gives $V_i'(w)=(J_1-J_0)(\theta_i(w))$. Hence $(V_C-V_L)'=(J_1-J_0)(\theta_C)-(J_1-J_0)(\theta_L)>0$ by the dilemma condition; the boundary conditions give existence and uniqueness of $w_M$. Writing $V_C-V_L=(1-w)[J_0(\theta_C)-J_0(\theta_L)]+w[J_1(\theta_C)-J_1(\theta_L)]=-(1-w)\Delta_{\mathrm{loc}}(w)+w\,\Delta_{\mathrm{team}}(w)$, its zero is exactly (S). If the $\Delta$'s are constants, (S) is linear in $w_M$ and gives the closed form; the error of the frozen form is $G(w_{\mathrm{ref}})-G(w_M)$ with $G=\Delta_{\mathrm{loc}}/(\Delta_{\mathrm{loc}}+\Delta_{\mathrm{team}})$, first order in $w_{\mathrm{ref}}-w_M$. With unit multipliers, $w c_g\Delta_{\mathrm{team}}=(1-w)c_\ell\Delta_{\mathrm{loc}}$ is $q/(1-q)=\Delta_{\mathrm{loc}}/\Delta_{\mathrm{team}}$.
+(ii) Laplace's method on each basin gives $\pi(B_L)/\pi(B_C)=e^{2(V_L-V_C)/\varepsilon}\sqrt{\det(-H_C)/\det(-H_L)}\,(1+o(1))$, uniformly for $w$ in compacts; the crossing of this ratio with $1$ is at $V_L-V_C=O(\varepsilon)$, and the implicit function theorem (using $(V_C-V_L)'>0$) gives $w_M+O(\varepsilon)$.
+(iii) is the Eyring--Kramers law (Freidlin--Wentzell; Berglund 2013) together with $C_T\approx e^{-T/\bar\tau(w)}$, solved at $\tfrac12$. For a non-conservative $F_0$ the invariant law is not Gibbs and $V_i$ is replaced by the Freidlin--Wentzell quasi-potential; the structure (equal-depth wells, exponentially separated rates) is unchanged but there is no closed form.
+\end{proof}
+
+\begin{table}[t]
+\centering\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{2.3cm}p{3.5cm}p{2.3cm}p{3.1cm}p{1.9cm}}
+\toprule
+Class & Midpoint law $\wfifty(T)$ & Effect of clock $\kappa$ & Asymptote & Slope $|b_1|$ vs.\ $T$\\
+\midrule
+Exponential growth, saturating (Thm.~1) & $h^{-1}\!\big(\wcrit+\tfrac{L}{a\kappa T}\big)$, then exponential approach to $w_\infty$ & translation in $\ln T$; shift $\propto1/\kappa$ & $w_\infty$: independent of $\kappa$ and of the init.\ law; offset from $\wcrit$ $\propto\xc$ (Cor.~4) & $\propto T$ (faster near saturation)\\
+Saddle-node bottleneck (Prop.~4) & $w_s+\tfrac{\pi^2}{pq\kappa^2T^2}$ & shift $\propto\kappa^{-2}$ & $w_s$ (independent of $\xc$) & not derived\\
+Bistable basin (Prop.~3) & $w_B+O(e^{-\kappa\gamma T})$ & translation; $w_B$ fixed & $w_B$: \emph{depends on init law}, not on $\xc$ & --\\
+Noise-driven (Prop.~5) & $w_k-\tfrac{\kappa\varepsilon}{2c}\ln\tfrac{\kappa T}{\tau_0\ln2}$ & shifts \emph{and} rescales temperature & none within budget; $w_M$ at $T=\infty$ & $\approx$ const in $T$\\
+\bottomrule
+\end{tabular}
+\caption{Fingerprints that separate the classes. The first column's asymptote and the last column's slope scaling are the cheapest discriminators and need only re-reading fits the paper already exports.}
+\end{table}
+
+\section{What the theory says about the paper's numbers}
+
+All figures below are recomputed from the tables of~\cite{P} and the stated intervals; my Firth fits reproduce its reported midpoints and slopes (null $0.685$, slope $-25.1$; $\lambda=1,3,7$ slopes $-14.72,-29.68,-55.23$), which validates the data I read. Three caveats apply throughout: the $450$k and $900$k intervals are read off Figure~1 of~\cite{P} (approximate); the cross-sectional and cohort estimates use different grids; and all of this is conditional on Hypotheses~\ref{h0}--\ref{h3}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{fig_crossing.pdf}
+\caption{Linear-reward crossings: cross-sectional runs (filled) and the independent cohort (open) with 95\% intervals; paper's log law (dotted), best $w_\infty+c/T$ (solid), exact normal-form law (E) fitted to the pooled eight points (dashed).}
+\end{figure}
+
+\paragraph{6.1 Functional form: $1/T$, not $\ln T$.}
+On the four cross-sectional horizons, $\wfifty=w_\infty+c/T$ with $w_\infty=0.521$, $c=44.8$ (T in thousands) has RMSE $0.0025$; the paper's $\ln T$ law has RMSE $0.027$ with a systematic residual pattern ($+,-,-,+$), and a free power law $a+bT^{-g}$ gives $g=1.08$, i.e.\ $g\approx1$ (the saddle-node class predicts $g=2$: RMSE $0.015$). Out of sample against the independent cohort's linear arm:
+\begin{center}\small
+\begin{tabular}{rcccc}
+\toprule
+$T$ & observed [95\%] & $1/T$ prediction & log-law prediction \\
+\midrule
+300k & $0.648\ [0.582,0.725]$ & $0.670$ & $0.698$\\
+900k & $0.543\ [0.500,0.604]$ & $0.571$ & $0.547$\\
+1.8M & $0.589\ [0.500,0.698]$ & $0.546$ & $0.452$ (outside)\\
+3.6M & $0.590\ [0.482,0.700]$ & $0.533$ & $0.356$ (outside)\\
+\bottomrule
+\end{tabular}
+\end{center}
+Pooling all eight points (four cross-sectional, four cohort; this assumes the same underlying $\wfifty(T)$ curve, justified by the shared experimental design and environment but not independently tested), $\chi^2$ is $25.6$ (6 d.o.f.) for the log law, $3.3$ (6 d.o.f.) for $w_\infty+c/T$, and $2.0$ (4 d.o.f.) for the exact law (E). The best (E) fit has $\wcrit=0.497$ and $w_\infty=0.566$, but these are one admissible point and not estimates: profiling over the offset $w_\infty-\wcrit$ gives $\chi^2$ between $1.8$ and $3.2$ for offsets from $0.01$ to $0.20$, every value inside the 95\% region. Along that profile $\wcrit$ ranges over $0.36$--$0.52$ and the window end $\Tstar$ of Theorem~\ref{t1}(b) over roughly $190$k--$2.5$M (some profile fits sit on the bound of the amplitude ratio). What the eight points do determine is that $w_\infty$ lies in $[0.53,0.57]$ throughout the profile (this is the profile-marginal range at 95\%, not a confidence interval for $w_\infty$ itself; constructing the latter requires a bootstrap or a full likelihood, neither of which eight points support well). Two consequences. First, whether the 450k and 900k points lie inside the $1/T$ window depends on the unidentified $\Tstar$: for small offsets the $c/T$ intercept ($0.521$) estimates $\wcrit$, for large offsets it is an effective constant between $\wcrit$ and $w_\infty$. Second, the offset is exactly what separates $\wcrit$ from $w_\infty$, and it is what the label-threshold sweep of Corollary~\ref{c4} would identify. The role of (E) is to explain the cohort's plateau near $0.59$ after 900k, which a $\ln T$ law cannot. Consequence for Table~2 of~\cite{P} (equivalent budgets, which invert the log law): re-inverting with $c/T$ gives null $273$k (paper $330$k), curvature $699$k ($685$k), $\lambda=3$ $176$k ($172$k), $\lambda=7$ $135$k ($98$k); the direct-control arms B/A/S become $1146$k/$149$k/$124$k (the same inversion with the log law gives $820$k/$123$k/$78$k). Interpolated values barely move; the extrapolated ones (A, S, $\lambda=7$) do. Note also that under the $c/T$ inversion any crossing at or below its intercept ($0.52$) has no finite equivalent budget; by the above, $0.52$ is an estimate of neither $\wcrit$ nor $w_\infty$ in general.
+
+\paragraph{6.2 Does a pure clock explain the transform effects? No.}
+\emph{Contrast persistence (Corollary~\ref{c3}).} Under clock-only transforms the loss-multiplier-minus-curvature contrast should fall like $1/T$ from its 300k value $0.281$: predictions $0.094,\ 0.047,\ 0.023$ at 900k, 1.8M, 3.6M, versus observed $0.284\,[0.182,0.393]$, $0.326\,[0.222,0.433]$, $0.146\,[0.072,0.229]$. All three observed intervals exclude the clock-only prediction. These are in-window ($1/T$) predictions. Beyond $\Tstar$ (not located by the data; shorter for faster clocks) clock-only contrasts instead collapse exponentially to $0$ (Corollary~\ref{c3}), so the more telling features are that the observed contrast has not declined at all through 1.8M and has not vanished by 3.6M. The alternatives are a threshold shift, a change of critical direction (Corollary~\ref{c2}(v)), or the noise-driven class.
+
+\emph{Slopes (Corollary~\ref{c2}).} With the null's $Q_0=|b_1|(\wfifty-\wcrit)=25.11\times(0.685-0.52)=4.14$, the implied threshold of each $\lambda$-arm is $\wcrit^{\,v}=\wfifty-Q_0/|b_1|$:
+\begin{center}\small
+\begin{tabular}{lccccccc}
+\toprule
+$\lambda$ & 1 & 2 & 3 & 4 & 5 & 6 & 7\\
+\midrule
+$\wfifty$ (300k) & .585 & .714 & .775 & .805 & .825 & .835 & .852\\
+$|b_1|$ & 14.7 & 27.2 & 29.7 & 36.8 & 67.0 & 33.6 & 55.2\\
+implied $\wcrit^{\,v}$ & .30 & .56 & .64 & .69 & .76 & .71 & .78\\
+\bottomrule
+\end{tabular}
+\end{center}
+A pure clock would give a constant row ($=0.52$); instead the implied threshold falls with curvature and rises monotonically (up to noise in $b_1$) with $\lambda$. The reading is robust to the base value of $\wcrit\in[0.45,0.55]$ ($\lambda=7$: $0.745$--$0.791$; $\lambda=1$: $0.18$--$0.36$). The qualitative signature is that slopes \emph{steepen} as the midpoint moves right (a slowed clock would flatten them), which is the reparametrization/threshold signature. This is a reading under strong assumptions (common $L/s$, global logistic slope), not a test. Corollary~\ref{c2}(v) makes the dependence explicit: with $r_v=(L_v/s_v)/(L_0/s_0)$ the implied threshold is $\wfifty-r_vQ_0/|b_1|$, and returning every arm to a common threshold $0.52$ would need $r_v\approx0.23$ for $\lambda=1$ and $r_v\approx4.4$ for $\lambda=7$. Such factors are not excluded, but they would themselves be transform effects on the critical direction, not clock effects: the conclusion ``not a pure clock'' survives while the attribution (threshold shift versus direction change) does not. The slope-based quantity is what the direct control of~\cite{P} should have reported. To my reading of Figure~6 of~\cite{P} (Table~9 there), arm S (pure scaling) looks visibly shallower than arm A, which is what a clock-versus-threshold split predicts; the exported slopes will confirm or refute that in one line.
+
+\emph{Two-horizon thresholds on the cohort.} Using Corollary~\ref{c2}(i) with rough standard errors (independence assumed, bracket-only intervals treated as uniform):
+\begin{center}\small
+\begin{tabular}{lcc}
+\toprule
+arm & $\widehat{\wcrit}$ from 300k/900k & $\widehat{\wcrit}$ from 1.8M/3.6M\\
+\midrule
+linear & $0.49\pm0.04$ & $0.59\pm0.12$\\
+curvature only & $0.38\pm0.08$ & $0.65\pm0.12$\\
+loss multiplier 7 & $0.67\pm0.11$ & $0.62\pm0.10$\\
+\bottomrule
+\end{tabular}
+\end{center}
+The early window reproduces the ordering (curvature lowest, multiplier highest, with the multiplier-minus-curvature gap $\approx0.29$), but both windows must be read against Theorem~\ref{t1}(b). The estimator is the intercept of the $c/T$ law and is valid only for horizons below $\Tstar$; above it, it returns an effective value between $\wcrit^{\,v}$ and $w_\infty^v$, and for $T_1,T_2\gg\Tstar$ it returns $w_\infty^v$ itself. On the best-fit (E) curve, an illustrative point of the flat profile with $\Tstar\approx370$k, the estimator applied to (300k, 900k) returns $0.523$ against a true $\wcrit=0.497$, and applied to (1.8M, 3.6M) it returns $0.566=w_\infty$. So the late column estimates the saturated asymptote and not the threshold, and the early column is biased upward by an amount that depends on each arm's own window ($\Tstar\propto1/\kappa$, so faster-clock arms are more biased). That all three arms sit near $0.6$ in the late window says only that their asymptotes are indistinguishable at the available precision (one standard error is about $0.1$--$0.15$, so a difference between arms is not detectable below roughly $0.3$). The data therefore do \emph{not} settle whether the multiplier moves the asymptotic threshold: a transient threshold-like shift that closes by 3.6M is also compatible, and the $0.146$ contrast at 3.6M may still be an unfinished transient.
+
+\paragraph{6.3 The prediction most at risk.}
+Theorem~\ref{t1}(e) predicts slopes $|b_1|\propto T$ (transitions sharpening with budget). To my reading of Figure~1 of~\cite{P}, the 150k and 300k curves have similar widths, whereas the theorem demands a doubling. If the exported slopes confirm this, the simple exponential-growth class with init-only randomness is falsified for the baseline and the Kramers-type class (slope roughly constant in $T$, Table~1) or a heavy-tailed collapse probability (note $10\%$ collapse at $w=1$ in the 150k panel) is the better description; the $c/T$ midpoint law and the constant-slope signature would then need a reconciling mechanism (for example, a barrier vanishing like $(\wcrit-w)^{3/2}$ near a saddle-node, which makes the log law bend toward a power law).
+
+\section{Limits and the experiments that would close them}
+
+\textbf{Assumptions that carry the weight.} (A1) The ODE limit of Hypothesis~\ref{h0} for PPO with Adam, joint gradient clipping and GAE; in particular, the clock factor is a modelling device for effects of clipping, optimizer normalization and critic lag, and may be state- and time-dependent (Lemmas~\ref{l2}--\ref{l3} allow this as long as it is bounded and positive). (A2) Exact advantages (a converged critic); critic lag is a direction perturbation, not a clock. (A3) The scalar reduction (Hypothesis~\ref{h3}), in particular the projection step (c): a fibre-compatible label, an asymptotic-phase initial law and $T\gg1/(\kappa g)$, together with a saturating ($\chi>0$) nonlinearity. (A4) The clock-plus-reparametrization family (Hypothesis~\ref{h2}) for the nonlinear transform. (A5) Noise: the deterministic theory is exact only when seed randomness is dominated by initialization (Remark~\ref{rm_noise}). (A6) A simple critical mode: no multiplicity from exact symmetry, no Hopf crossing, a non-negligible spectral gap $g$ (Remark~\ref{rm_sym}).
+
+\textbf{Experiments, cheapest first.}
+\begin{enumerate}
+\item \emph{Re-read the exported slopes.} Check $|b_1|$ versus $T$ at all four horizons (class discrimination, Table~1), and compute $Q=|b_1|(\wfifty-\wcrit)$ for arms A, B, S. No new runs.
+\item \emph{Label-threshold sweep and window check (free if the final policies are stored).} Re-threshold the stored final mean base-stock actions at several $\xc'$ and refit each. Corollary~\ref{c4} predicts that $w_\infty$ moves linearly in $\xc'$ while the $1/T$ intercept $\wcrit^{\,v}$ does not; the other classes predict no dependence (bistable, saddle-node) or quadratic dependence (pitchfork). Also report $\Tstar$ from the refits, so that every two-horizon estimate is labelled as inside or outside its window. No new training runs.
+\item \emph{Learning-rate/budget equivalence.} Halve the learning rate and double $T$: Lemma~\ref{l2} predicts the same crossing in the noise-free regime; deviation measures the temperature coupling (Remark~\ref{rm_noise}). This tests the clock lemma itself.
+\item \emph{Two-horizon thresholds for A/B/S.} Run the existing direct-control design also at 900k (ideally 1.8M) and estimate $\wcrit^{\,v}$ by Corollary~\ref{c2}(i). Prediction: $\wcrit^S=\wcrit^B$ for the pure scale; a loss-multiplier effect beyond scaling shows as $\wcrit^A\neq\wcrit^S$. This replaces the underpowered single-horizon midpoint comparison ($A-S=-0.062\,[-0.157,0.028]$).
+\item \emph{Initialization sweep.} Scale the initial policy spread by $e^{\delta}$. Theorem~\ref{t1} predicts the $c/T$ coefficient shifts by $L\to L+\delta$ and $w_\infty$ does not move; Proposition~\ref{p3} predicts $w_\infty$ moves with the initial law. This discriminates the two exponential classes.
+\item \emph{Jacobian at collapsed policies.} Estimate $A_0,A_1$ from averaged policy-gradient fields (finite differences or Hessian-vector products) at collapsed solutions, compute $\rho(w)$, $w_{\mathrm{cert}}$, $w_{\mathrm{tr}}$, the spectral gap $g$ and $a=\ell^\top(A_1-A_0)r$ (Propositions~\ref{p1}--\ref{p2}). A computed $w_{\mathrm{cert}}\le\wcrit\le w_{\mathrm{tr}}$ lying below the fitted $w_\infty$ by an amount consistent with the offset of Corollary~\ref{c4} would be the first direct check of Hypothesis~\ref{h4}. The gap $g$ also determines whether a given horizon satisfies the time-scale separation of Hypothesis~\ref{h3}(c)(iii): the condition $T\gg1/(\kappa g)$ can then be checked for each experimental horizon.
+\end{enumerate}
+
+\textbf{Wording the paper can safely use.} ``Collapse is a first-passage phenomenon of the reward-mixed learning flow; a transform that acts as a bounded positive clock translates $\wfifty(T)$ in $\ln T$ and cannot change its $T\to\infty$ limit (Lemma~3). We therefore report two-horizon thresholds, which separate clock from threshold effects.'' The paper should \emph{not} claim, on this theory alone, that the multiplier moves the asymptotic boundary: the evidence above supports non-clock behaviour in the early window and is inconclusive late.
+
+\begin{thebibliography}{9}
+\bibitem{P} Anonymous authors. Measuring Finite-Budget Coordination-Collapse Crossings in Reward-Mixed Cooperative MARL. Submission under double-blind review, Transactions on Machine Learning Research (TMLR); 19-page PDF as read for this note. (Figure, table and section numbers in this note refer to that version.)
+\bibitem{GH} J.~Guckenheimer, P.~Holmes. \emph{Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields}. Springer, 1983. (Normal forms, center manifold, transcritical and saddle-node bifurcations.)
+\bibitem{Kato} T.~Kato. \emph{Perturbation Theory for Linear Operators}. Springer. (Simple-eigenvalue perturbation formula.)
+\bibitem{Sod} G.~S\"oderlind. The logarithmic norm. History and modern theory. \emph{BIT Numerical Mathematics} 46 (2006).
+\bibitem{FW} M.~I.~Freidlin, A.~D.~Wentzell. \emph{Random Perturbations of Dynamical Systems}. Springer, 1984.
+\bibitem{Berg} N.~Berglund. Kramers' law: validity, derivations and generalisations. \emph{Markov Processes and Related Fields} 19 (2013).
+\bibitem{Bork} V.~S.~Borkar. \emph{Stochastic Approximation: A Dynamical Systems Viewpoint}. Cambridge Univ.\ Press, 2008.
+\bibitem{KY} H.~J.~Kushner, G.~G.~Yin. \emph{Stochastic Approximation and Recursive Algorithms and Applications}. Springer, 2003.
+\end{thebibliography}
+
+\end{document}
